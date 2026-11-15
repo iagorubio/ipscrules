@@ -14,9 +14,12 @@
         @auth
             <nav>
                 <a href="{{ route('ask') }}">Consultas</a>
+                <a href="{{ route('exams') }}">Exámenes</a>
                 @if(auth()->user()->isAdmin())
                     <a href="{{ route('admin.users') }}">Usuarios</a>
                     <a href="{{ route('admin.rulebook') }}">Reglamento</a>
+                    <a href="{{ route('admin.questions') }}">Preguntas</a>
+                    <a href="{{ route('admin.exams') }}">Resultados</a>
                 @endif
             </nav>
             <form method="post" action="{{ route('logout') }}">@csrf

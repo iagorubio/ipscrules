@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\AskLog;
 use App\Models\User;
 use App\Support\Disciplines;
+use App\Support\QuoteMatcher;
 use Throwable;
 
 /**
@@ -161,7 +162,7 @@ TXT;
 
             $match = null;
             foreach ($passages as $p) {
-                if (strcasecmp($p['ref'], $rule) === 0 && $this->contains($p['text'], $quote)) {
+                if (strcasecmp($p['ref'], $rule) === 0 && QuoteMatcher::contains($p['text'], $quote)) {
                     $match = $p;
                     break;
                 }
@@ -179,33 +180,6 @@ TXT;
         }
 
         return $out;
-    }
-
-    private function contains(string $haystack, string $quote): bool
-    {
-        $h = $this->norm($haystack);
-        $parts = preg_split('/\s*(?:\.{3}|…)\s*/u', $quote);
-        $parts = array_filter(array_map([$this, 'norm'], $parts), fn ($p) => mb_strlen($p) >= 8);
-        if (! $parts) {
-            return false;
-        }
-        foreach ($parts as $p) {
-            if (! str_contains($h, $p)) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    private function norm(string $s): string
-    {
-        $s = str_replace(['“', '”', '„', '‟'], '"', $s);
-        $s = str_replace(['‘', '’', '´'], "'", $s);
-        $s = str_replace(['–', '—', '‑'], '-', $s);
-        $s = mb_strtolower($s);
-
-        return trim((string) preg_replace('/[\s"\'.,;:]+/u', ' ', $s));
     }
 
     private function log(User $user, string $discipline, string $question, string $status, string $answer, array $citations, array $tokens): AskLog

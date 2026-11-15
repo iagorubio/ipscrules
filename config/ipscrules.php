@@ -8,6 +8,9 @@ return [
     'default_quota' => (int) env('IPSC_DEFAULT_QUOTA', 60),
     'global_monthly_limit' => (int) env('IPSC_GLOBAL_LIMIT', 3000),
 
+    // Exámenes que puede empezar cada árbitro al mes
+    'exams_per_month' => (int) env('IPSC_EXAMS_PER_MONTH', 10),
+
     // Invitaciones
     'invitation_days' => 14,
 

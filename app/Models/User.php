@@ -38,6 +38,11 @@ class User extends Authenticatable
         return $this->hasMany(AskLog::class);
     }
 
+    public function exams(): HasMany
+    {
+        return $this->hasMany(Exam::class);
+    }
+
     /** Preguntas hechas en el mes en curso. */
     public function questionsThisMonth(): int
     {
