@@ -31,7 +31,8 @@ class Anthropic
             ], fn ($v) => $v !== null));
 
         if (! $response->successful()) {
-            throw new RuntimeException('La API de IA respondió con error '.$response->status().'.');
+            // El detalle del error (sin datos del usuario) va al registro para poder diagnosticarlo
+            throw new RuntimeException('La API de IA respondió con error '.$response->status().': '.mb_substr((string) $response->json('error.message', ''), 0, 300));
         }
 
         $text = collect($response->json('content', []))->where('type', 'text')->pluck('text')->implode('');
