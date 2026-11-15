@@ -48,6 +48,31 @@
             @endif
         </div>
     @endforeach
+
+    @if($current->status !== 'error')
+        @php($dispute = $current->disputes->firstWhere('user_id', auth()->id()))
+        <hr style="border:0;border-top:1px solid var(--line);margin:1rem 0">
+        @if($dispute)
+            <p class="muted">Enviaste una discrepancia el {{ $dispute->created_at->format('d/m/Y') }}
+                — <strong>{{ ['open' => 'pendiente de revisión', 'confirmed' => 'confirmada: gracias, la IA se equivocó', 'rejected' => 'revisada: la respuesta era correcta'][$dispute->status] }}</strong>.
+                @if($dispute->admin_note)<br>Comentario del administrador: {{ $dispute->admin_note }}@endif</p>
+        @else
+            <details @if($errors->has('comment') || $errors->has('suggested_rule')) open @endif>
+                <summary>No estoy de acuerdo con esta respuesta</summary>
+                <form method="post" action="{{ route('disputes.store', $current) }}">
+                    @csrf
+                    <label for="comment">¿Qué esperabas que respondiera, o qué es incorrecto?</label>
+                    <textarea id="comment" name="comment" maxlength="1500" required>{{ old('comment') }}</textarea>
+                    @error('comment')<p class="err">{{ $message }}</p>@enderror
+                    <label for="suggested_rule">Regla correcta (opcional, por ejemplo 10.4.9)</label>
+                    <input id="suggested_rule" name="suggested_rule" maxlength="40" value="{{ old('suggested_rule') }}">
+                    @error('suggested_rule')<p class="err">{{ $message }}</p>@enderror
+                    <p class="muted">Se enviará al administrador tu pregunta, la respuesta de la IA y tu comentario, junto con tu nombre y correo, para poder contestarte y mejorar la herramienta.</p>
+                    <button type="submit">Enviar discrepancia</button>
+                </form>
+            </details>
+        @endif
+    @endif
 </div>
 @endif
 

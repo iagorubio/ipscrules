@@ -1,12 +1,14 @@
 <?php
 
 use App\Http\Controllers\Admin\AskLogController;
+use App\Http\Controllers\Admin\DisputeController as AdminDisputeController;
 use App\Http\Controllers\Admin\ExamResultController;
 use App\Http\Controllers\Admin\QuestionController;
 use App\Http\Controllers\Admin\RulebookController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\AskController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\DisputeController;
 use App\Http\Controllers\ExamController;
 use App\Http\Controllers\InvitationController;
 use Illuminate\Support\Facades\Route;
@@ -25,6 +27,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/', [AskController::class, 'index'])->name('ask');
     Route::post('/preguntar', [AskController::class, 'store'])->middleware('throttle:12,1')->name('ask.store');
 
+    Route::post('/consultas/{log}/discrepancia', [DisputeController::class, 'store'])->middleware('throttle:10,1')->name('disputes.store');
+
     Route::get('/examenes', [ExamController::class, 'index'])->name('exams');
     Route::post('/examenes', [ExamController::class, 'start'])->middleware('throttle:10,1')->name('exams.start');
     Route::get('/examenes/{exam}', [ExamController::class, 'show'])->name('exams.show');
@@ -39,6 +43,9 @@ Route::middleware('auth')->group(function () {
         Route::delete('/invitaciones/{invitation}', [UserController::class, 'revoke'])->name('invitations.revoke');
         Route::get('/reglamento', [RulebookController::class, 'index'])->name('rulebook');
         Route::get('/consultas', [AskLogController::class, 'index'])->name('asklogs');
+        Route::get('/discrepancias', [AdminDisputeController::class, 'index'])->name('disputes');
+        Route::get('/discrepancias/exportar', [AdminDisputeController::class, 'export'])->name('disputes.export');
+        Route::patch('/discrepancias/{dispute}', [AdminDisputeController::class, 'update'])->name('disputes.update');
 
         Route::get('/preguntas', [QuestionController::class, 'index'])->name('questions');
         Route::post('/preguntas/generar', [QuestionController::class, 'generate'])->middleware('throttle:6,1')->name('questions.generate');

@@ -19,6 +19,7 @@
                     <a href="{{ route('admin.users') }}">Usuarios</a>
                     <a href="{{ route('admin.rulebook') }}">Reglamento</a>
                     <a href="{{ route('admin.asklogs') }}">Registro</a>
+                    <a href="{{ route('admin.disputes') }}">Discrepancias</a>
                     <a href="{{ route('admin.questions') }}">Preguntas</a>
                     <a href="{{ route('admin.exams') }}">Resultados</a>
                 @endif

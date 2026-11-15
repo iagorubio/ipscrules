@@ -15,7 +15,7 @@ class AskController extends Controller
     public function index(Request $request): View
     {
         $user = $request->user();
-        $current = $request->integer('r') ? $user->askLogs()->find($request->integer('r')) : null;
+        $current = $request->integer('r') ? $user->askLogs()->with('disputes')->find($request->integer('r')) : null;
 
         return view('ask.index', [
             'current' => $current,

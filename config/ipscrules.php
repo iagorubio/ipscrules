@@ -8,6 +8,9 @@ return [
     'default_quota' => (int) env('IPSC_DEFAULT_QUOTA', 60),
     'global_monthly_limit' => (int) env('IPSC_GLOBAL_LIMIT', 3000),
 
+    // Correo al que se avisa cuando un árbitro no está de acuerdo con una respuesta (vacío = solo panel)
+    'feedback_email' => env('IPSC_FEEDBACK_EMAIL'),
+
     // Exámenes que puede empezar cada árbitro al mes
     'exams_per_month' => (int) env('IPSC_EXAMS_PER_MONTH', 10),
 

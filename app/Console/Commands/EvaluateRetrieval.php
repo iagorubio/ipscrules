@@ -8,13 +8,13 @@ use Illuminate\Console\Command;
 
 class EvaluateRetrieval extends Command
 {
-    protected $signature = 'reglamento:evaluar {--respuesta : Además de la búsqueda, genera la respuesta completa y comprueba las citas} {--detalle : Muestra los pasajes recuperados}';
+    protected $signature = 'reglamento:evaluar {--respuesta : Además de la búsqueda, genera la respuesta completa y comprueba las citas} {--detalle : Muestra los pasajes recuperados} {--discrepancias : Incluye las discrepancias confirmadas por el admin}';
 
     protected $description = 'Mide con preguntas de control si la búsqueda (y la respuesta) encuentra la regla correcta';
 
     public function handle(): int
     {
-        $cases = require database_path('golden/questions.php');
+        $cases = \App\Support\GoldenSet::cases((bool) $this->option('discrepancias'));
         $user = User::first() ?? new User(['id' => 0]);
         $full = $this->option('respuesta');
         $found = $answered = 0;
