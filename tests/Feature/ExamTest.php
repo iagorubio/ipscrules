@@ -81,6 +81,21 @@ class ExamTest extends TestCase
         $this->assertDatabaseHas('ai_usages', ['purpose' => 'generar_preguntas', 'user_id' => $admin->id]);
     }
 
+    public function test_generator_retries_once_when_the_reply_is_cut(): void
+    {
+        $this->importFixture();
+        $good = ['questions' => [['statement' => 'Explica cuándo un disparo contra el suelo cercano no implica descalificación',
+            'key_points' => ['Blanco de papel o frangible cercano', 'Distancia menor de 3 metros'], 'model_answer' => 'Cuando se dispara a un blanco de papel o frangible más cerca de 3 metros.',
+            'rule' => '10.4.2', 'quote' => 'except when shooting at a paper or frangible target']]];
+        Http::fake(['api.anthropic.com/*' => Http::sequence()->push($this->reply('{"questions": [{"statement": "cortada'))->push($this->reply($good))]);
+
+        $this->actingAs($this->admin())->post('/admin/preguntas/generar', ['discipline' => 'S', 'section' => '10.4', 'count' => 1, 'type' => 'open', 'difficulty' => 'media']);
+
+        $this->assertDatabaseCount('exam_questions', 1);
+        $this->assertSame('open', ExamQuestion::firstOrFail()->type);
+        $this->assertDatabaseCount('ai_usages', 2);
+    }
+
     public function test_generator_uses_only_text_of_the_chosen_discipline(): void
     {
         $this->importFixture();

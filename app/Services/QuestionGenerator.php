@@ -28,11 +28,20 @@ class QuestionGenerator
             throw new RuntimeException('No hay reglas con texto suficiente para esa disciplina y sección.');
         }
 
-        $r = $this->ai->message($this->system($discipline, $count, $type, $difficulty), $this->context($passages), min(8000, 700 * $count + 600));
-        DB::table('ai_usages')->insert(['user_id' => $admin->id, 'purpose' => 'generar_preguntas', 'input_tokens' => $r['input'], 'output_tokens' => $r['output']]);
+        $data = null;
+        // Un reintento si la respuesta llega cortada o sin JSON válido
+        for ($attempt = 1; $attempt <= 2 && ! $data; $attempt++) {
+            $r = $this->ai->message($this->system($discipline, $count, $type, $difficulty), $this->context($passages), min(12000, 1500 * $count + 1000));
+            DB::table('ai_usages')->insert(['user_id' => $admin->id, 'purpose' => 'generar_preguntas', 'input_tokens' => $r['input'], 'output_tokens' => $r['output']]);
 
-        $data = Anthropic::json($r['text']);
-        if (! $data || ! is_array($data['questions'] ?? null)) {
+            $parsed = Anthropic::json($r['text']);
+            if ($parsed && is_array($parsed['questions'] ?? null)) {
+                $data = $parsed;
+            } else {
+                logger()->warning('Generación de preguntas sin JSON válido', ['intento' => $attempt, 'inicio' => mb_substr($r['text'], 0, 300), 'tokens_salida' => $r['output']]);
+            }
+        }
+        if (! $data) {
             throw new RuntimeException('La IA no devolvió preguntas en un formato válido.');
         }
 
