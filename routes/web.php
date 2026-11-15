@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\AskLogController;
 use App\Http\Controllers\Admin\ExamResultController;
 use App\Http\Controllers\Admin\QuestionController;
 use App\Http\Controllers\Admin\RulebookController;
@@ -37,6 +38,7 @@ Route::middleware('auth')->group(function () {
         Route::patch('/usuarios/{user}', [UserController::class, 'update'])->name('users.update');
         Route::delete('/invitaciones/{invitation}', [UserController::class, 'revoke'])->name('invitations.revoke');
         Route::get('/reglamento', [RulebookController::class, 'index'])->name('rulebook');
+        Route::get('/consultas', [AskLogController::class, 'index'])->name('asklogs');
 
         Route::get('/preguntas', [QuestionController::class, 'index'])->name('questions');
         Route::post('/preguntas/generar', [QuestionController::class, 'generate'])->middleware('throttle:6,1')->name('questions.generate');
