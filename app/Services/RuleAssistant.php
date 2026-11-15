@@ -18,8 +18,30 @@ use Throwable;
  */
 class RuleAssistant
 {
+    private bool $persist = true;
+
     public function __construct(private Anthropic $ai, private RuleSearch $search)
     {
+    }
+
+    /** Para evaluaciones: no guarda la consulta en el historial ni gasta cuota. */
+    public function withoutLogging(): static
+    {
+        $this->persist = false;
+
+        return $this;
+    }
+
+    /**
+     * Fase de recuperación (palabras clave en inglés + pasajes), separada para poder evaluarla.
+     *
+     * @return array{keywords:string,passages:list<array{ref:string,kind:string,disciplines:string,title:string,text:string}>}
+     */
+    public function retrieve(string $question, string $discipline, array &$tokens): array
+    {
+        $keywords = $this->keywords($question, $tokens);
+
+        return ['keywords' => $keywords, 'passages' => $this->passages($question, $keywords, $discipline)];
     }
 
     public function ask(User $user, string $discipline, string $question): AskLog
@@ -27,8 +49,7 @@ class RuleAssistant
         $tokens = ['in' => 0, 'out' => 0];
 
         try {
-            $keywords = $this->keywords($question, $tokens);
-            $passages = $this->passages($question, $keywords, $discipline);
+            ['passages' => $passages] = $this->retrieve($question, $discipline, $tokens);
 
             if (! $passages) {
                 return $this->log($user, $discipline, $question, 'no_info', $this->noInfo(), [], $tokens);
@@ -184,7 +205,7 @@ TXT;
 
     private function log(User $user, string $discipline, string $question, string $status, string $answer, array $citations, array $tokens): AskLog
     {
-        return AskLog::create([
+        $values = [
             'user_id' => $user->id,
             'discipline' => $discipline,
             'question' => $question,
@@ -193,6 +214,8 @@ TXT;
             'status' => $status,
             'input_tokens' => $tokens['in'],
             'output_tokens' => $tokens['out'],
-        ]);
+        ];
+
+        return $this->persist ? AskLog::create($values) : (new AskLog)->forceFill($values);
     }
 }
