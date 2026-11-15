@@ -3,13 +3,16 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Mail\InvitationMail;
 use App\Models\AskLog;
 use App\Models\Invitation;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
+use Throwable;
 
 class UserController extends Controller
 {
@@ -42,10 +45,21 @@ class UserController extends Controller
         }
 
         Invitation::where('email', $email)->whereNull('accepted_at')->delete();
-        [, $token] = Invitation::issue($email, $data['role'], $request->user()->id);
+        [$invitation, $token] = Invitation::issue($email, $data['role'], $request->user()->id);
 
-        // El enlace solo se muestra una vez: en la base de datos solo queda su hash.
-        return back()->with('invite_link', route('invitation.show', $token))->with('invite_email', $email);
+        return $this->issued($request, $invitation, $token, $request->boolean('send_email'));
+    }
+
+    /** El token solo se guarda como hash: reenviar crea una invitación nueva con otro enlace. */
+    public function resend(Request $request, Invitation $invitation): RedirectResponse
+    {
+        abort_if($invitation->accepted_at, 404);
+        $email = $invitation->email;
+        $role = $invitation->role;
+        $invitation->delete();
+        [$new, $token] = Invitation::issue($email, $role, $request->user()->id);
+
+        return $this->issued($request, $new, $token, true);
     }
 
     public function update(Request $request, User $user): RedirectResponse
@@ -72,5 +86,26 @@ class UserController extends Controller
         $invitation->delete();
 
         return back()->with('status', 'Invitación anulada.');
+    }
+
+    /** Muestra el enlace una sola vez y, si se pide, lo envía por correo avisando si el envío falla. */
+    private function issued(Request $request, Invitation $invitation, string $token, bool $sendEmail): RedirectResponse
+    {
+        $link = route('invitation.show', $token);
+        $back = back()->with('invite_link', $link)->with('invite_email', $invitation->email);
+
+        if (! $sendEmail) {
+            return $back;
+        }
+
+        try {
+            Mail::to($invitation->email)->send(new InvitationMail($link, $invitation->role, $request->user()->name, $invitation->expires_at));
+        } catch (Throwable $e) {
+            report($e);
+
+            return $back->with('mail_error', 'No se pudo enviar el correo. Copia el enlace y envíalo tú.');
+        }
+
+        return $back->with('mail_sent', "Correo enviado a {$invitation->email}.");
     }
 }

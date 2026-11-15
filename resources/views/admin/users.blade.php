@@ -5,8 +5,15 @@
 
 @if(session('invite_link'))
 <div class="flash">
-    <strong>Invitación creada para {{ session('invite_email') }}.</strong> Copia y envía este enlace (solo se muestra ahora):<br>
-    <a href="{{ session('invite_link') }}">{{ session('invite_link') }}</a>
+    <strong>Invitación creada para {{ session('invite_email') }}.</strong>
+    @if(session('mail_sent'))
+        {{ session('mail_sent') }} El enlace también se muestra aquí, solo ahora:
+    @elseif(session('mail_error'))
+        <span style="color:var(--bad)">{{ session('mail_error') }}</span> El enlace, que solo se muestra ahora:
+    @else
+        Copia y envía este enlace (solo se muestra ahora):
+    @endif
+    <br><a href="{{ session('invite_link') }}">{{ session('invite_link') }}</a>
 </div>
 @endif
 
@@ -18,6 +25,7 @@
         <div><label for="role">Rol</label>
             <select id="role" name="role"><option value="arbitro">Árbitro</option><option value="admin">Administrador</option></select></div>
         <div style="align-self:end"><button type="submit">Crear invitación</button></div>
+        <div style="flex-basis:100%"><label style="font-weight:400;margin:0"><input type="checkbox" name="send_email" value="1" style="width:auto" @checked(old('send_email', '1'))> Enviarla también por correo</label></div>
     </form>
     @error('email')<p class="err">{{ $message }}</p>@enderror
 </div>
@@ -28,6 +36,8 @@
     <ul class="hist">
     @foreach($pending as $p)
         <li>{{ $p->email }} <span class="muted">· {{ $p->role }} · caduca {{ $p->expires_at->format('d/m/Y') }}</span>
+            <form method="post" action="{{ route('admin.invitations.resend', $p) }}" style="display:inline">@csrf
+                <button class="link" type="submit" title="Crea un enlace nuevo y lo envía por correo">reenviar</button></form>
             <form method="post" action="{{ route('admin.invitations.revoke', $p) }}" style="display:inline">@csrf @method('DELETE')
                 <button class="link" type="submit">anular</button></form></li>
     @endforeach

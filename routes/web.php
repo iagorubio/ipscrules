@@ -32,7 +32,8 @@ Route::middleware('auth')->group(function () {
 
     Route::middleware('admin')->prefix('admin')->name('admin.')->group(function () {
         Route::get('/usuarios', [UserController::class, 'index'])->name('users');
-        Route::post('/usuarios/invitar', [UserController::class, 'invite'])->name('users.invite');
+        Route::post('/usuarios/invitar', [UserController::class, 'invite'])->middleware('throttle:20,1')->name('users.invite');
+        Route::post('/invitaciones/{invitation}/reenviar', [UserController::class, 'resend'])->middleware('throttle:20,1')->name('invitations.resend');
         Route::patch('/usuarios/{user}', [UserController::class, 'update'])->name('users.update');
         Route::delete('/invitaciones/{invitation}', [UserController::class, 'revoke'])->name('invitations.revoke');
         Route::get('/reglamento', [RulebookController::class, 'index'])->name('rulebook');
