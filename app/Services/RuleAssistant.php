@@ -103,7 +103,8 @@ class RuleAssistant
         $system = <<<TXT
 You are an assistant for IPSC range officers. You answer ONLY from the rulebook passages provided (IPSC Combined Competition Rules, January 2026; the English text is the official one). The discipline of the question is: {$name}.
 Rules:
-- Answer in Spanish, concise and practical. Keep IPSC terms in English in parentheses when useful.
+- Answer in Spanish, concise and practical (at most about 150 words). Keep IPSC terms in English in parentheses when useful.
+- Cite at most 5 rules, the most relevant ones.
 - Every statement must be backed by a cited rule. Use the passage label exactly (e.g. "10.4.2", "Appendix D8", "Glossary: Berm").
 - For each citation give a short verbatim quote (maximum 40 words, in English) copied exactly from that passage.
 - If the passages do not contain the answer, set "found" to false and say in Spanish that it is not in the rulebook for this discipline. Never guess or use outside knowledge.
@@ -121,11 +122,17 @@ TXT;
             $context .= "[{$label}] ({$p['title']})\n".mb_substr($p['text'], 0, 1800)."\n\n";
         }
 
-        $r = $this->ai->message($system, "PASSAGES:\n\n{$context}QUESTION (Spanish):\n{$question}", 1200);
-        $tokens['in'] += $r['input'];
-        $tokens['out'] += $r['output'];
-
-        $data = Anthropic::json($r['text']);
+        $data = null;
+        // Un reintento si la respuesta llega cortada o sin JSON válido
+        for ($attempt = 1; $attempt <= 2 && ! $data; $attempt++) {
+            $r = $this->ai->message($system, "PASSAGES:\n\n{$context}QUESTION (Spanish):\n{$question}", 2500);
+            $tokens['in'] += $r['input'];
+            $tokens['out'] += $r['output'];
+            $data = Anthropic::json($r['text']);
+            if (! $data) {
+                logger()->warning('Respuesta de la IA sin JSON válido', ['intento' => $attempt, 'inicio' => mb_substr($r['text'], 0, 200), 'tokens_salida' => $r['output']]);
+            }
+        }
         if (! $data) {
             throw new \RuntimeException('Respuesta de la IA sin JSON válido.');
         }
