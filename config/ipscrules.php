@@ -15,5 +15,5 @@ return [
     'invitation_days' => 14,
 
     // Fragmentos de reglamento que se envían al modelo en cada consulta
-    'context_passages' => 8,
+    'context_passages' => 12,
 ];

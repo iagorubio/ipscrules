@@ -39,6 +39,8 @@ return [
         'key' => env('ANTHROPIC_API_KEY'),
         'model' => env('ANTHROPIC_MODEL', 'claude-haiku-5-5'),
         'url' => env('ANTHROPIC_URL', 'https://api.anthropic.com/v1/messages'),
+        // Temperatura 0 para respuestas estables; si algún modelo la rechaza, ANTHROPIC_TEMPERATURE=null en el .env
+        'temperature' => env('ANTHROPIC_TEMPERATURE', 0),
     ],
 
 ];

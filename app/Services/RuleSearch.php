@@ -18,9 +18,9 @@ class RuleSearch
     /**
      * @return list<array{ref:string,kind:string,disciplines:string,title:string,text:string}>
      */
-    public function search(string $keywords, string $discipline, int $limit = 8): array
+    public function search(string $keywords, string $discipline, int $limit = 8, bool $all = false): array
     {
-        $match = $this->matchQuery($keywords);
+        $match = $this->matchQuery($keywords, $all);
         if ($match === null) {
             return [];
         }
@@ -63,8 +63,11 @@ class RuleSearch
         return ['ref' => $r->ref, 'kind' => $r->kind, 'disciplines' => $r->disciplines, 'title' => $r->title, 'text' => $r->body];
     }
 
-    /** Construye una consulta FTS5 segura (cada término entre comillas, unidos por OR). */
-    private function matchQuery(string $keywords): ?string
+    /**
+     * Construye una consulta FTS5 segura: cada término entre comillas, unidos por OR
+     * (o por AND implícito si $all, para exigir que aparezcan todos).
+     */
+    private function matchQuery(string $keywords, bool $all = false): ?string
     {
         $tokens = preg_split('/[^\p{L}\p{N}]+/u', mb_strtolower($keywords), -1, PREG_SPLIT_NO_EMPTY);
         $tokens = array_unique(array_filter(
@@ -75,6 +78,6 @@ class RuleSearch
             return null;
         }
 
-        return implode(' OR ', array_map(fn ($t) => '"'.$t.'"', array_slice($tokens, 0, 16)));
+        return implode($all ? ' ' : ' OR ', array_map(fn ($t) => '"'.$t.'"', array_slice($tokens, 0, 16)));
     }
 }

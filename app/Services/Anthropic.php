@@ -21,12 +21,14 @@ class Anthropic
         $response = Http::withHeaders(['x-api-key' => $key, 'anthropic-version' => '2023-06-01'])
             ->timeout(60)
             ->retry(2, 800, throw: false)
-            ->post(config('services.anthropic.url'), [
+            ->post(config('services.anthropic.url'), array_filter([
                 'model' => config('services.anthropic.model'),
                 'max_tokens' => $maxTokens,
+                // 0 = respuestas lo más estables posible entre ejecuciones (null para no enviarlo)
+                'temperature' => config('services.anthropic.temperature'),
                 'system' => $system,
                 'messages' => [['role' => 'user', 'content' => $user]],
-            ]);
+            ], fn ($v) => $v !== null));
 
         if (! $response->successful()) {
             throw new RuntimeException('La API de IA respondió con error '.$response->status().'.');
